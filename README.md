@@ -17,3 +17,9 @@
 > 通过`游戏设置`可以设置蛇的移动速度（默认：100ms）
 
 ![](img/SnakeMoveSpeed.gif)
+
+## 蛇的变速
+
+> 长按方向键可以变速移动
+
+![](img/SnakeMoveSpeedChange.gif)

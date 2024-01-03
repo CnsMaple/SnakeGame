@@ -252,6 +252,11 @@ class SnakeGameWidget : public QWidget
             }
         }
 
+        QString getSnakeDirection()
+        {
+            return direction;
+        }
+
         void setSnakeDirection(QString dir)
         {
             if (direction == "u" && dir == "d")
@@ -283,7 +288,6 @@ class SnakeGameWidget : public QWidget
             }
         }
 
-        bool gameStatus = false;
 
     signals:
         void gameOver(int mode);
@@ -291,6 +295,7 @@ class SnakeGameWidget : public QWidget
 
     private:
         QTimer *timer;
+        bool gameStatus = false;
         int blockSize = 20;
         int widgetAllBlockWidth = 10;
         int widgetAllBlockHeight = 10;
@@ -300,5 +305,5 @@ class SnakeGameWidget : public QWidget
         QString preDirection = "n";
         QPoint *food;
         int score = 0;
-        int speed = 100;
+        int speed = 250;
 };

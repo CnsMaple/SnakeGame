@@ -44,6 +44,9 @@ class GameShowWidget : public QWidget
             layout->addLayout(gameTopLayout);
             layout->addWidget(gameArea);
 
+            speed = gameArea->getSpeed();
+            speedAdd = speed - 200;
+
             connect(gameStartGameButton,
                     &QPushButton::clicked,
                     this,
@@ -67,8 +70,11 @@ class GameShowWidget : public QWidget
                         QMessageBox::information(
                             this,
                             "帮助",
-                            "按方向键控制蛇的移动，吃到食物得分，撞到墙壁或者自己结束游戏\n游戏开始"
-                            "前请调整合适的窗口大小，游戏布局随窗口大小变化\n游戏设置可以设置速度大小");
+                            "1.单按方向键控制方向\n"
+                            "2.长按方向键变速\n"
+                            "3.窗口的大小是蛇的活动空间大小，适当调整窗口大小\n"
+                            "4.撞墙和撞到自己都会结束游戏\n"
+                            "5.游戏设置可以设置速度");
                     });
 
             connect(gameSettingButton,
@@ -80,26 +86,40 @@ class GameShowWidget : public QWidget
 
                         QGridLayout dialogGridLayout;
 
-                        QLabel dialogBottomLabel("游戏速度(1-1000):");
+                        QLabel dialogBottomLabel("正常速度(1-1000):");
                         QLineEdit dialogBottomLineEdit;
-                        dialogBottomLineEdit.setText(QString::number(gameArea->getSpeed()));
+                        dialogBottomLineEdit.setText(QString::number(1000 - gameArea->getSpeed()));
                         dialogGridLayout.addWidget(&dialogBottomLabel, 0, 0);
                         dialogGridLayout.addWidget(&dialogBottomLineEdit, 0, 1);
 
+                        // 按下空格的速度
+                        QLabel dialogSpaceLabel("变速速度(1-1000):");
+                        QLineEdit dialogSpaceLineEdit;
+                        dialogSpaceLineEdit.setText(QString::number(1000 - speedAdd));
+                        dialogGridLayout.addWidget(&dialogSpaceLabel, 1, 0);
+                        dialogGridLayout.addWidget(&dialogSpaceLineEdit, 1, 1);
+
                         QPushButton dialogEnsureButton("确定");
                         QPushButton dialogCancelButton("取消");
-                        dialogGridLayout.addWidget(&dialogEnsureButton, 1, 0);
-                        dialogGridLayout.addWidget(&dialogCancelButton, 1, 1);
+                        dialogGridLayout.addWidget(&dialogEnsureButton, 2, 0);
+                        dialogGridLayout.addWidget(&dialogCancelButton, 2, 1);
 
                         connect(&dialogEnsureButton,
                                 &QPushButton::clicked,
                                 [&]()
                                 {
-                                    bool ok;
-                                    int speed = dialogBottomLineEdit.text().toInt(&ok);
-                                    if (!ok)
+                                    bool ok1;
+                                    bool ok2;
+                                    int speed = dialogBottomLineEdit.text().toInt(&ok1);
+                                    int speedAdd = dialogSpaceLineEdit.text().toInt(&ok2);
+                                    if (!ok1)
                                     {
                                         QMessageBox::warning(this, "警告", "速度请输入数字");
+                                        return;
+                                    }
+                                    if (!ok2)
+                                    {
+                                        QMessageBox::warning(this, "警告", "加速速度请输入数字");
                                         return;
                                     }
 
@@ -108,7 +128,16 @@ class GameShowWidget : public QWidget
                                         QMessageBox::warning(this, "警告", "速度范围为1-1000");
                                         return;
                                     }
+                                    if (!(speedAdd <= 1000 && speedAdd >= 1))
+                                    {
+                                        QMessageBox::warning(this, "警告", "加速速度范围为1-1000");
+                                        return;
+                                    }
+                                    speed = 1000 - speed;
+                                    speedAdd = 1000 - speedAdd;
                                     gameArea->setSpeed(speed);
+                                    this->speed = speed;
+                                    this->speedAdd = speedAdd;
                                     dialog.close();
                                 });
 
@@ -155,6 +184,7 @@ class GameShowWidget : public QWidget
                 if (str == "开始游戏")
                 {
                     gameStartGameButton->setText("结束游戏");
+                    gameArea->setSpeed(speed);
                     gameArea->start();
                     gameScoreNumLabel->setText("0");
                 }
@@ -166,6 +196,7 @@ class GameShowWidget : public QWidget
                     // qDebug() << gameStartGameButton->text();
                     gameStartGameButton->setText("开始游戏");
                     gameArea->end();
+                    gameArea->setSpeed(speed);
 
                     // 吃完全部食物
                     QString score = gameScoreNumLabel->text();
@@ -185,11 +216,11 @@ class GameShowWidget : public QWidget
                                              "得分:" + gameScoreNumLabel->text(),
                                              QMessageBox::Ok);
                     }
+                    gameScoreNumLabel->setText("0");
                 }
             }
         }
 
-        // 键盘监听上下左右
         void keyPressEvent(QKeyEvent *event)
         {
             if (event->key() == Qt::Key_Up)
@@ -208,6 +239,53 @@ class GameShowWidget : public QWidget
             {
                 gameArea->setSnakeDirection("r");
             }
+
+            // 变速
+            if (!event->isAutoRepeat())
+            {
+                QString direction = gameArea->getSnakeDirection();
+                if (direction == "u" && event->key() == Qt::Key_Up)
+                {
+                    gameArea->setSpeed(speedAdd);
+                }
+                else if (direction == "d" && event->key() == Qt::Key_Down)
+                {
+                    gameArea->setSpeed(speedAdd);
+                }
+                else if (direction == "l" && event->key() == Qt::Key_Left)
+                {
+                    gameArea->setSpeed(speedAdd);
+                }
+                else if (direction == "r" && event->key() == Qt::Key_Right)
+                {
+                    gameArea->setSpeed(speedAdd);
+                }
+            }
+        }
+
+        void keyReleaseEvent(QKeyEvent *event)
+        {
+            // 恢复速度
+            if (!event->isAutoRepeat())
+            {
+                QString direction = gameArea->getSnakeDirection();
+                if ((direction == "u" || direction == "d") && event->key() == Qt::Key_Up)
+                {
+                    gameArea->setSpeed(speed);
+                }
+                else if ((direction == "u" || direction == "d") && event->key() == Qt::Key_Down)
+                {
+                    gameArea->setSpeed(speed);
+                }
+                else if ((direction == "l" || direction == "r") && event->key() == Qt::Key_Left)
+                {
+                    gameArea->setSpeed(speed);
+                }
+                else if ((direction == "l" || direction == "r") && event->key() == Qt::Key_Right)
+                {
+                    gameArea->setSpeed(speed);
+                }
+            }
         }
 
     private:
@@ -219,4 +297,7 @@ class GameShowWidget : public QWidget
         QPushButton *gameSettingButton;
         SnakeGameWidget *gameArea;
         QPushButton *gameHelpButton;
+
+        int speed;
+        int speedAdd;
 };
