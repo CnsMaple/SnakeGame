@@ -8,8 +8,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    GameShowWidget *gameShowWidget = new GameShowWidget();
-    gameShowWidget->show();
+    GameShowWidget gameShowWidget;
+    gameShowWidget.show();
 
     return app.exec();
 }
